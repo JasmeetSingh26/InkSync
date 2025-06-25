@@ -1,52 +1,45 @@
-   [![Project Banner](https://github.com/himanshu8443/InkSync/assets/99420590/0e79c4b5-a834-4235-a741-67ca97e02abd)](http://inksync.cloud/)
+## A Real-Time Collaborative Whiteboard Web App built with NextJs.
 
-   
-A Real-Time Collaborative Whiteboard Web App built with NextJs.
----
 ## Features
-* Share canvas in real-time easily just by sharing a link.
-* Chat with people in the room.
-* Own file extension .ink Save the drawing files locally on your device.
+
+- Share canvas in real-time easily just by sharing a link.
+- Chat with people in the room.
+- Own file extension .ink Save the drawing files locally on your device.
 
 ---
-## ScreenShots
-![image](https://github.com/himanshu8443/InkSync/assets/99420590/4971f9c1-5c19-436a-af31-664ecda2084d)
-
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Installation
 
 1. Clone the repository to your local machine.
-    ```sh
-    git clone https://github.com/himanshu8443/InkSync.git
-    ```
-    
 2. Install the required packages.
-    ```sh
-    cd InkSync
-    npm install
-    
-    cd server
-    npm install
-    ```
-    
+
+   ```sh
+   cd InkSync
+   npm install
+
+   cd server
+   npm install
+   ```
+
 3. Set up the environment variables:
    Create a .env file in the root directory
+
    ```sh
    NEXT_PUBLIC_SERVER_URL= # URL of the server (e.g. http://localhost:3000 in development mode)
    ```
+
    Create a .env file in the server directory
+
    ```sh
    PORT = "5000"
    ```
-   
 
-5. Start the development server.
-    ```sh
-    npm run dev
-    ```
-
+4. Start the development server.
+   ```sh
+   npm run dev
+   ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
