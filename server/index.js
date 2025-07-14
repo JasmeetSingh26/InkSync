@@ -59,9 +59,8 @@ io.on("connection", (socket) => {
 
   // send message
   socket.on("sendMessage", (data) => {
-    // Broadcast the updated elements to all connected clients
-    socket.to(data.roomId).emit("getMessage", data);
-    io.to(socket.id).emit("getMessage", data);
+    // Broadcast the message to all clients in the room (including sender)
+    io.to(data.roomId).emit("getMessage", data);
   });
 
   // ping server every 2 min to prevent render server from sleeping

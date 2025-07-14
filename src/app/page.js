@@ -59,6 +59,9 @@ export default function Home({ params }) {
 
     return () => {
       socket.off("updateCanvas");
+      socket.off("getMessage");
+      socket.off("ping");
+      socket.disconnect();
     };
   }, []);
 
@@ -71,6 +74,7 @@ export default function Home({ params }) {
     };
     if (socket) {
       socket.emit("sendMessage", data);
+      // Do NOT add the message locally; wait for 'getMessage' from server
     }
   };
 
