@@ -17,6 +17,11 @@ export default function Home({ params }) {
   const [userName, setUserName] = useState("Anonymous");
   const [isLive, setIsLive] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [lockStatus, setLockStatus] = useState({
+    isLocked: false,
+    lockedBy: null,
+    lockedByUserName: null,
+  });
 
   const server = process.env.NEXT_PUBLIC_SERVER_URL;
   const connectionOptions = {
@@ -44,9 +49,13 @@ export default function Home({ params }) {
       setMessages((messages) => [...messages, message]);
     });
 
+    socket.on("lockStatus", (status) => {
+      setLockStatus(status);
+    });
+
     // ping server every 2 min to prevent render server from sleeping
     socket.on("ping", () => {
-      settimeout(() => {
+      setTimeout(() => {
         socket.emit("pong");
       }, 120000);
     });
@@ -60,6 +69,7 @@ export default function Home({ params }) {
     return () => {
       socket.off("updateCanvas");
       socket.off("getMessage");
+      socket.off("lockStatus");
       socket.off("ping");
       socket.disconnect();
     };
@@ -91,6 +101,26 @@ export default function Home({ params }) {
     }
   };
 
+  const requestLock = () => {
+    if (socket) {
+      const data = {
+        roomId: params.roomId,
+        userName: userName,
+      };
+      socket.emit("requestLock", data);
+    }
+  };
+
+  const releaseLock = () => {
+    if (socket) {
+      const data = {
+        roomId: params.roomId,
+        userName: userName,
+      };
+      socket.emit("releaseLock", data);
+    }
+  };
+
   return (
     <div className=" relative">
       <div className=" fixed top-0 z-20">
@@ -117,6 +147,9 @@ export default function Home({ params }) {
           messages={messages}
           sendMessage={sendMessage}
           socketId={socket?.id}
+          lockStatus={lockStatus}
+          requestLock={requestLock}
+          releaseLock={releaseLock}
         />
       </div>
       <Board
@@ -131,6 +164,10 @@ export default function Home({ params }) {
         canvasColor={canvasColor}
         strokeWidth={strokeWidth}
         updateCanvas={updateCanvas}
+        lockStatus={lockStatus}
+        requestLock={requestLock}
+        releaseLock={releaseLock}
+        socketId={socket?.id}
       />
     </div>
   );

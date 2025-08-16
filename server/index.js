@@ -37,23 +37,85 @@ io.on("connection", (socket) => {
       // uppdate the new user with the current canvas
       io.to(socket.id).emit("updateCanvas", elements);
       elements.user = [...elements.user, socket.id];
+      // Send current lock status to new user
+      io.to(socket.id).emit("lockStatus", {
+        isLocked: elements.isLocked || false,
+        lockedBy: elements.lockedBy || null,
+        lockedByUserName: elements.lockedByUserName || null,
+      });
     } else {
       rooms.push({
         roomId: data.roomId,
         updatedElements: [],
         user: [socket.id],
         canvasColor: "#121212",
+        isLocked: false,
+        lockedBy: null,
+        lockedByUserName: null,
       });
     }
   });
+
+  // Request lock for drawing
+  socket.on("requestLock", (data) => {
+    const room = rooms.find((element) => element.roomId === data.roomId);
+    if (room && !room.isLocked) {
+      room.isLocked = true;
+      room.lockedBy = socket.id;
+      room.lockedByUserName = data.userName;
+
+      // Notify all users in the room about the lock
+      io.to(data.roomId).emit("lockStatus", {
+        isLocked: true,
+        lockedBy: socket.id,
+        lockedByUserName: data.userName,
+      });
+    } else if (room && room.isLocked) {
+      // Lock is already taken, notify the requesting user
+      io.to(socket.id).emit("lockStatus", {
+        isLocked: true,
+        lockedBy: room.lockedBy,
+        lockedByUserName: room.lockedByUserName,
+      });
+    }
+  });
+
+  // Release lock when drawing stops
+  socket.on("releaseLock", (data) => {
+    const room = rooms.find((element) => element.roomId === data.roomId);
+    if (room && room.lockedBy === socket.id) {
+      room.isLocked = false;
+      room.lockedBy = null;
+      room.lockedByUserName = null;
+
+      // Notify all users in the room that lock is released
+      io.to(data.roomId).emit("lockStatus", {
+        isLocked: false,
+        lockedBy: null,
+        lockedByUserName: null,
+      });
+    }
+  });
+
   // update the canvas
   socket.on("updateCanvas", (data) => {
+    // Check if the user has the lock before allowing canvas update
+    const room = rooms.find((element) => element.roomId === data.roomId);
+    if (room && room.isLocked && room.lockedBy !== socket.id) {
+      // User doesn't have the lock, reject the update
+      io.to(socket.id).emit("lockStatus", {
+        isLocked: true,
+        lockedBy: room.lockedBy,
+        lockedByUserName: room.lockedByUserName,
+      });
+      return;
+    }
+
     // Broadcast the updated elements to all connected clients
     socket.to(data.roomId).emit("updateCanvas", data);
-    const elements = rooms.find((element) => element.roomId === data.roomId);
-    if (elements) {
-      elements.updatedElements = data.updatedElements;
-      elements.canvasColor = data.canvasColor;
+    if (room) {
+      room.updatedElements = data.updatedElements;
+      room.canvasColor = data.canvasColor;
     }
   });
 
@@ -74,6 +136,18 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     rooms.forEach((element) => {
       element.user = element.user.filter((user) => user !== socket.id);
+      // If the user who had the lock disconnects, release the lock
+      if (element.lockedBy === socket.id) {
+        element.isLocked = false;
+        element.lockedBy = null;
+        element.lockedByUserName = null;
+        // Notify remaining users that lock is released
+        io.to(element.roomId).emit("lockStatus", {
+          isLocked: false,
+          lockedBy: null,
+          lockedByUserName: null,
+        });
+      }
       if (element.user.length === 0) {
         rooms = rooms.filter((room) => room.roomId !== element.roomId);
       }
