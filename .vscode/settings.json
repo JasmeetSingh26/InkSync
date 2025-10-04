@@ -1,3 +1,9 @@
 {
-  "cSpell.words": ["itim", "Itim", "webp"]
+  "cSpell.words": [
+    "itim",
+    "Itim",
+    "webp"
+  ],
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic"
 }

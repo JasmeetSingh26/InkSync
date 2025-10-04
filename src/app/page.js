@@ -23,7 +23,7 @@ export default function Home({ params }) {
     lockedByUserName: null,
   });
 
-  const server = process.env.NEXT_PUBLIC_SERVER_URL;
+  const server = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:8080";
   const connectionOptions = {
     "force new connection": true,
     reconnectionAttempts: "Infinity",
@@ -40,17 +40,45 @@ export default function Home({ params }) {
     setIsLive(true);
     const socket = io(server, connectionOptions);
     setSocket(socket);
+    // Handle real-time canvas updates
     socket.on("updateCanvas", (data) => {
       setElements(data.updatedElements);
       setCanvasColor(data.canvasColor);
     });
 
+    // Handle new messages
     socket.on("getMessage", (message) => {
       setMessages((messages) => [...messages, message]);
     });
 
+    // Handle lock status updates
     socket.on("lockStatus", (status) => {
       setLockStatus(status);
+    });
+
+    // Handle complete room state when joining
+    socket.on("roomState", (state) => {
+      console.log("Received room state:", state);
+
+      // Restore canvas if exists
+      if (state.canvas && state.canvas.elements) {
+        setElements(state.canvas.elements);
+        setCanvasColor(state.canvas.canvasColor || "#121212");
+      }
+
+      // Restore chat history if exists
+      if (state.chatHistory && state.chatHistory.length > 0) {
+        setMessages(state.chatHistory);
+      }
+
+      // Restore lock status if exists
+      if (state.lockStatus) {
+        setLockStatus({
+          isLocked: state.lockStatus.isLocked || false,
+          lockedBy: state.lockStatus.lockedBy || null,
+          lockedByUserName: state.lockStatus.lockedByUserName || null,
+        });
+      }
     });
 
     // ping server every 2 min to prevent render server from sleeping
@@ -70,6 +98,7 @@ export default function Home({ params }) {
       socket.off("updateCanvas");
       socket.off("getMessage");
       socket.off("lockStatus");
+      socket.off("roomState");
       socket.off("ping");
       socket.disconnect();
     };

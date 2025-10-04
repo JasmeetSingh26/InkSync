@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Microservices
+  room-service:
+    build: ./room-service
+    environment:
+      - PORT=3001
+
+  drawing-service:
+    build: ./drawing-service
+    environment:
+      - PORT=3002
+
+  chat-service:
+    build: ./chat-service
+    environment:
+      - PORT=3003
+
+  websocket-gateway:
+    build: ./websocket-gateway
+    # Port mapping removed to allow scaling - access via nginx only
+    environment:
+      - PORT=3004
+      - ROOM_SERVICE_URL=http://room-service:3001
+      - DRAWING_SERVICE_URL=http://drawing-service:3002
+      - CHAT_SERVICE_URL=http://chat-service:3003
+    depends_on:
+      - room-service
+      - drawing-service
+      - chat-service
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - room-service
+      - drawing-service
+      - chat-service
+      - websocket-gateway
+
+networks:
+  default:
+    name: inksync-node-network

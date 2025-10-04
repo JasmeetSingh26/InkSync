@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InkSync WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #log {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            background: #f5f5f5;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-sent {
+            color: blue;
+        }
+        .log-received {
+            color: green;
+        }
+        .log-error {
+            color: red;
+        }
+        .log-info {
+            color: gray;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 InkSync WebSocket Test</h1>
+        
+        <div>
+            <input type="text" id="roomId" placeholder="Room ID" value="test123">
+            <input type="text" id="userName" placeholder="Your Name" value="TestUser">
+        </div>
+
+        <div>
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="joinRoom()">Join Room</button>
+            <button onclick="requestLock()">Request Lock</button>
+            <button onclick="releaseLock()">Release Lock</button>
+        </div>
+
+        <div>
+            <input type="text" id="message" placeholder="Chat message" value="Hello!">
+            <button onclick="sendMessage()">Send Message</button>
+        </div>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let socketId = 'socket-' + Date.now();
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry log-' + type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('Already connected!', 'info');
+                return;
+            }
+
+            ws = new WebSocket('ws://localhost:8080/ws');
+            
+            ws.onopen = () => {
+                log('✅ Connected to WebSocket server', 'info');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                log(`📥 Received: ${JSON.stringify(data, null, 2)}`, 'received');
+            };
+
+            ws.onerror = (error) => {
+                log(`❌ Error: ${error}`, 'error');
+            };
+
+            ws.onclose = () => {
+                log('🔌 Disconnected from server', 'info');
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                log('Disconnected', 'info');
+            }
+        }
+
+        function joinRoom() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected! Click Connect first.', 'error');
+                return;
+            }
+
+            const roomId = document.getElementById('roomId').value;
+            const userName = document.getElementById('userName').value;
+
+            const message = {
+                type: 'join-room',
+                roomId: roomId,
+                socketId: socketId,
+                userName: userName
+            };
+
+            ws.send(JSON.stringify(message));
+            log(`📤 Sent: ${JSON.stringify(message)}`, 'sent');
+        }
+
+        function requestLock() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected!', 'error');
+                return;
+            }
+
+            const userName = document.getElementById('userName').value;
+
+            const message = {
+                type: 'request-lock',
+                userName: userName
+            };
+
+            ws.send(JSON.stringify(message));
+            log(`📤 Sent: ${JSON.stringify(message)}`, 'sent');
+        }
+
+        function releaseLock() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected!', 'error');
+                return;
+            }
+
+            const message = {
+                type: 'release-lock'
+            };
+
+            ws.send(JSON.stringify(message));
+            log(`📤 Sent: ${JSON.stringify(message)}`, 'sent');
+        }
+
+        function sendMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected!', 'error');
+                return;
+            }
+
+            const messageText = document.getElementById('message').value;
+            const userName = document.getElementById('userName').value;
+
+            const message = {
+                type: 'send-message',
+                message: messageText,
+                userName: userName
+            };
+
+            ws.send(JSON.stringify(message));
+            log(`📤 Sent: ${JSON.stringify(message)}`, 'sent');
+        }
+
+        // Log initial info
+        log(`Socket ID: ${socketId}`, 'info');
+        log('Click "Connect" to start, then "Join Room" to join a room', 'info');
+    </script>
+</body>
+</html>
