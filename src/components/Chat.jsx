@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { BsFillChatSquareTextFill } from "react-icons/bs";
 import { IoClose } from "react-icons/io5";
 
-const Chat = ({ isLive, sendMessage, messages, socketId }) => {
+const Chat = ({ isLive, sendMessage, messages, socketId, userName }) => {
   const [chatMessage, setChatMessage] = useState("");
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [show, setShow] = useState(false);
@@ -12,7 +12,8 @@ const Chat = ({ isLive, sendMessage, messages, socketId }) => {
     if (
       !show &&
       messages.length > 0 &&
-      messages[messages.length - 1].socketId !== socketId
+      messages[messages.length - 1].socketId !== socketId &&
+      messages[messages.length - 1].userName !== userName
     ) {
       setUnreadMessages(unreadMessages + 1);
     }
@@ -72,7 +73,8 @@ const Chat = ({ isLive, sendMessage, messages, socketId }) => {
                 <div className="rounded-b-lg p-2">
                   <div className="flex flex-col mt-5">
                     {messages.map((message, index) =>
-                      message.socketId === socketId ? (
+                      message.socketId === socketId ||
+                      message.userName === userName ? (
                         <div key={index} className="flex justify-end mb-4">
                           <div className="mr-2 py-3 px-4 bg-primary rounded-bl-3xl rounded-tl-3xl rounded-tr-xl text-white">
                             {message.message}

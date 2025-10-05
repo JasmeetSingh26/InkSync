@@ -18,10 +18,7 @@ const roomUsers = new Map();
 // Notify WebSocket Gateway
 async function notifyWebSocket(roomId, event) {
   try {
-    await axios.post(`${WEBSOCKET_URL}/internal/broadcast`, {
-      roomId,
-      ...event,
-    });
+    await axios.post(`${WEBSOCKET_URL}/notify/${roomId}`, event);
   } catch (error) {
     console.log("WebSocket notification failed:", error);
     // Continue anyway - app still works

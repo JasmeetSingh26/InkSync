@@ -180,6 +180,7 @@ const Toolbar = ({
               sendMessage={sendMessage}
               messages={messages}
               socketId={socketId}
+              userName={userName}
             />
           </div>
         </div>
